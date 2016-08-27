@@ -1,5 +1,7 @@
 package com.cashive.dao;
 
+import com.cashive.exceptions.CashiveException;
+import com.cashive.exceptions.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,6 +29,13 @@ public class AccountsDAO {
     }
 
     public void createNewAccount(String email, String password) {
+        String sql = String.format(VALIDATE_ACCOUNT, email);
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
+        if(results.size() > 0 ) {
+            logger.error("Account exists for: {}", email);
+            throw new CashiveException("Account already exists for this email id", ErrorCode.ACCOUNT_WITH_EMAIL_EXISTS);
+        }
+
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[32];
         random.nextBytes(salt);
@@ -35,7 +44,7 @@ public class AccountsDAO {
         byte[] hashedPassword = getHashed(saltedPassword.getBytes());
         String stringedHashedPassword = toHexString(hashedPassword);
 
-        String sql = String.format(INSERT_NEW, email, stringedSalt, stringedHashedPassword);
+        sql = String.format(INSERT_NEW, email, stringedSalt, stringedHashedPassword);
 
         logger.info("Creating a new user: {}", sql);
         jdbcTemplate.execute(sql);

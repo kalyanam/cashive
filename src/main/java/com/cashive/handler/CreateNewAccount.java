@@ -1,6 +1,8 @@
 package com.cashive.handler;
 
 import com.cashive.dao.AccountsDAO;
+import com.cashive.exceptions.CashiveException;
+import com.cashive.exceptions.ErrorCode;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.eclipse.jetty.http.HttpStatus;
@@ -24,7 +26,18 @@ public class CreateNewAccount {
         logger.info("Body is: {}", body);
         JsonObject jsonObject = new JsonObject(body);
 
-        accountsDAO.createNewAccount(jsonObject.getString("email"), jsonObject.getString("password"));
+        try {
+            accountsDAO.createNewAccount(jsonObject.getString("email"), jsonObject.getString("password"));
+        } catch (CashiveException ce) {
+            ce.printStackTrace();
+            if(ce.getErrorCode() == ErrorCode.ACCOUNT_WITH_EMAIL_EXISTS) {
+                routingContext.response().setStatusCode(HttpStatus.BAD_REQUEST_400).end(new JsonObject().put("error", ce.getMessage()).encode());
+                return ;
+            } else {
+                routingContext.fail(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                return ;
+            }
+        }
 
         routingContext.response().setStatusCode(HttpStatus.CREATED_201).end("{ \"status\": \"Success\" }");
 
