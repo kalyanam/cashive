@@ -1,5 +1,9 @@
 package com.cashive;
 
+import com.cashive.dao.DAOFactory;
+import com.cashive.db.DBMigrator;
+import com.cashive.handler.CreateNewAccount;
+import com.cashive.handler.ValidateAccount;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -17,8 +21,19 @@ public class CashiveBootstrap {
 
     private static final Logger logger = LoggerFactory.getLogger(CashiveBootstrap.class);
 
+    private DAOFactory factory;
+
     public void start() {
+        doSetupDb();
         doStartVertx();
+    }
+
+    private void doSetupDb() {
+        new DBMigrator().migrate();
+        factory = DAOFactory.newBuilder()
+                .withDriverName("org.postgresql.Driver")
+                .withDbUrl(System.getenv("JDBC_DATABASE_URL"))
+                .build();
     }
 
     private void doStartVertx() {
@@ -43,6 +58,9 @@ public class CashiveBootstrap {
         router.route().handler(CorsHandler.create("*"));
         router.route().handler(BodyHandler.create());
 
+        router.post().path("/account").handler(this::createAccount);
+        router.post().path("/account/validate").handler(this::validateAccount);
+
         router.get().path("/ping").handler(this::handlePing);
         logger.info("Starting vertx on port: {}", port);
         vertx.createHttpServer().requestHandler(router::accept).listen(port);
@@ -50,6 +68,14 @@ public class CashiveBootstrap {
 
     private void handlePing(RoutingContext routingContext) {
         routingContext.response().setStatusCode(HttpStatus.OK_200).end(new JsonObject().put("status","OK").encode());
+    }
+
+    private void createAccount(RoutingContext routingContext) {
+        new CreateNewAccount(factory.getAccountsDAO()).handle(routingContext);
+    }
+
+    private void validateAccount(RoutingContext routingContext) {
+        new ValidateAccount(factory.getAccountsDAO()).handle(routingContext);
     }
 
     public static void main(String[] args) {
