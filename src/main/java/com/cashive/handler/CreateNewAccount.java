@@ -27,10 +27,24 @@ public class CreateNewAccount {
         JsonObject jsonObject = new JsonObject(body);
 
         try {
-            accountsDAO.createNewAccount(jsonObject.getString("email"), jsonObject.getString("password"));
+            String email = jsonObject.getString("email");
+            String password = jsonObject.getString("password");
+
+            if(email == null || "".equals(email.trim())) {
+                throw new CashiveException("Email cannot be empty", ErrorCode.EMAIL_CANNOT_BE_EMPTY);
+            }
+
+            if(password == null || "".equals(password.trim())) {
+                throw new CashiveException("Password cannot be empty", ErrorCode.PASSWORD_CANNOT_BE_EMPTY);
+            }
+
+            accountsDAO.createNewAccount(email, password);
         } catch (CashiveException ce) {
             ce.printStackTrace();
-            if(ce.getErrorCode() == ErrorCode.ACCOUNT_WITH_EMAIL_EXISTS) {
+            if(ce.getErrorCode() == ErrorCode.ACCOUNT_WITH_EMAIL_EXISTS ||
+                    ce.getErrorCode() == ErrorCode.EMAIL_CANNOT_BE_EMPTY ||
+                    ce.getErrorCode() == ErrorCode.PASSWORD_CANNOT_BE_EMPTY) {
+
                 routingContext.response().setStatusCode(HttpStatus.BAD_REQUEST_400).end(new JsonObject().put("error", ce.getMessage()).encode());
                 return ;
             } else {

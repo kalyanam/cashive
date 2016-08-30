@@ -23,9 +23,26 @@ public class AccountsDAO {
 
     private static final String INSERT_NEW = "INSERT INTO ACCOUNTS (EMAIL, SALT, PASSHASH, IS_VERIFIED, IS_ACTIVE, JOINED_DATE) VALUES ('%s', '%s', '%s', 'N', 'Y', now())";
     private static final String VALIDATE_ACCOUNT = "SELECT EMAIL, SALT, PASSHASH FROM ACCOUNTS WHERE EMAIL = '%s'";
+    private static final String GET_ACCOUNT_ID = "SELECT ACCOUNT_ID FROM ACCOUNTS WHERE EMAIL='%s'";
 
     public AccountsDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    //Package protected method. Only other DAOs should be able to access this one
+    Integer getAccountId(String email) {
+        String sql = String.format(GET_ACCOUNT_ID, email);
+        logger.info("Executing sql: {}", sql);
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
+        if(results.size() > 1 ) {
+            logger.error("More than one account exists for: {}", email);
+            throw new CashiveException("More than one account exists for this email id", ErrorCode.ACCOUNT_WITH_EMAIL_EXISTS);
+        } else if(results.size() == 0) {
+            logger.error("No account exists for : {}", email);
+            throw new CashiveException("No account exists for this email id", ErrorCode.NO_ACCOUNT_EXISTS_WITH_EMAIL);
+        } else {
+            return Integer.parseInt(results.get(0).get("account_id").toString());
+        }
     }
 
     public void createNewAccount(String email, String password) {

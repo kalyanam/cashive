@@ -2,8 +2,7 @@ package com.cashive;
 
 import com.cashive.dao.DAOFactory;
 import com.cashive.db.DBMigrator;
-import com.cashive.handler.CreateNewAccount;
-import com.cashive.handler.ValidateAccount;
+import com.cashive.handler.*;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -63,7 +62,17 @@ public class CashiveBootstrap {
         router.post().path("/account").handler(this::createAccount);
         router.post().path("/account/validate").handler(this::validateAccount);
 
+        router.post().path("/group").handler(this::createGroup);
+        router.get().path("/group/:groupId").handler(this::findGroup);
+        router.post().path("/group/activate").handler(this::activateGroup);
+        router.get().path("/group/active/:email").handler(this::findActiveGroupsForUser);
+
+        router.post().path("/invite").handler(this::createInvite);
+        router.get().path("/invite/:email").handler(this::findAllInvitesForUser);
+        router.post().path("/batch/invites").handler(this::createInvites);
+
         router.get().path("/ping").handler(this::handlePing);
+
         logger.info("Starting vertx on port: {}", port);
         vertx.createHttpServer().requestHandler(router::accept).listen(port);
     }
@@ -78,6 +87,34 @@ public class CashiveBootstrap {
 
     private void validateAccount(RoutingContext routingContext) {
         new ValidateAccount(factory.getAccountsDAO()).handle(routingContext);
+    }
+
+    private void createGroup(RoutingContext routingContext) {
+        new CreateNewGroup(factory.getGroupsDAO()).handle(routingContext);
+    }
+
+    private void findGroup(RoutingContext routingContext) {
+        new FindGroup(factory.getGroupsDAO()).handle(routingContext);
+    }
+
+    private void createInvite(RoutingContext routingContext) {
+        new CreateNewInvite(factory.getInvitesDAO()).handle(routingContext);
+    }
+
+    private void createInvites(RoutingContext routingContext) {
+        new CreateNewInvites(factory.getInvitesDAO()).handle(routingContext);
+    }
+
+    private void findAllInvitesForUser(RoutingContext routingContext) {
+        new FindAllInvitesForUser(factory.getInvitesDAO()).handle(routingContext);
+    }
+
+    private void findActiveGroupsForUser(RoutingContext routingContext) {
+        new FindActiveGroupsForUser(factory.getActiveGroupInfoDAO()).handle(routingContext);
+    }
+
+    private void activateGroup(RoutingContext routingContext) {
+        new ActivateGroup(factory.getGroupsDAO(), factory.getActiveGroupInfoDAO()).handle(routingContext);
     }
 
     public static void main(String[] args) {

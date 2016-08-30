@@ -19,6 +19,18 @@ public class DAOFactory {
         return new AccountsDAO(jdbcTemplate);
     }
 
+    public GroupsDAO getGroupsDAO() {
+        return new GroupsDAO(jdbcTemplate, getAccountsDAO());
+    }
+
+    public InvitesDAO getInvitesDAO() {
+        return new InvitesDAO(jdbcTemplate, getAccountsDAO(), getGroupsDAO());
+    }
+
+    public ActiveGroupInfoDAO getActiveGroupInfoDAO() {
+        return new ActiveGroupInfoDAO(jdbcTemplate, getGroupsDAO(), getAccountsDAO());
+    }
+
     public static Builder newBuilder() {
         return new Builder();
     }

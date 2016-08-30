@@ -1,0 +1,49 @@
+POST localhost:5000/account
+
+{
+    "email": "kalyan120@gmail.com",
+    "password": "kirankumar"
+}
+
+
+POST http://localhost:5000/group
+
+{
+    "groupName" : "Krishna Das Group",
+    "email" : "kalyan120@gmail.com",
+    "startDate" : 1472702400000,
+    "termLength" : 20,
+    "termFrequency" : "WEEKLY",
+    "termAmount" : 500,
+    "maxParticipants" : 20
+}
+
+POST http://localhost:5000/invite
+
+{
+    "groupId": 1,
+    "inviterEmail": "kalyan120@gmail.com",
+    "invitedEmail": "sreetanikella@gmail.com"
+}
+
+//Find invites for email
+GET http://localhost:5000/invite/sreetanikella@gmail.com
+
+//Activate a group
+POST localhost:5000/group/activate
+
+{
+    "groupId": 1
+}
+
+//Send a batch of invites
+POST localhost:5000/batch/invites
+
+{
+    "groupId": 1,
+    "inviterEmail": "kalyan120@gmail.com",
+    "invitedEmails": ["amukta.pharma@gmail.com", "kiran.mudumbai@gmail.com"]
+}
+
+//Find active groups for email
+GET localhost:5000/group/active/kalyan120@gmail.com
